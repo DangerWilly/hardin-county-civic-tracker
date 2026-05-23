@@ -460,6 +460,52 @@ a:hover { color: var(--accent-deep); }
     color: var(--ink-mute);
 }
 
+/* ---- Forms (correction, future search, etc.) ---------------- */
+
+.form { margin: 0.5rem 0 2rem; }
+
+.form__label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-mute);
+    margin: 1.4rem 0 0.5rem;
+}
+.form__input {
+    display: block;
+    width: 100%;
+    background: #FFFDF7;
+    border: 1.5px solid var(--ink);
+    padding: 0.7rem 0.9rem;
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    line-height: 1.4;
+    color: var(--ink);
+    transition: box-shadow 0.15s;
+}
+.form__input:focus {
+    outline: none;
+    box-shadow: 4px 4px 0 0 var(--accent);
+}
+textarea.form__input { resize: vertical; }
+
+.form__hint {
+    margin: 0.7rem 0 1.4rem;
+    font-size: 0.82rem;
+    color: var(--ink-mute);
+    font-style: italic;
+}
+.form__error {
+    background: #FFEEEE;
+    border-left: 4px solid var(--accent);
+    padding: 0.8rem 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+    color: var(--accent-deep);
+}
+
 /* ---- Reduced motion ----------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {

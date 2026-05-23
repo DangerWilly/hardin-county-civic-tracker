@@ -7,7 +7,6 @@
 --   * jurisdictions are hierarchical via parent_id, so "city → county → state"
 --     scales without schema changes when we expand beyond Hardin
 
-PRAGMA journal_mode = WAL;       -- readers don't block writers (cron + web safe)
 
 -- ---- Geography ----------------------------------------------------------
 
