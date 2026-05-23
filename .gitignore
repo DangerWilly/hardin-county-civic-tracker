@@ -1,0 +1,7 @@
+.env
+data/*.sqlite
+data/*.sqlite-wal
+data/*.sqlite-shm
+data/backups/
+*.log
+.DS_Store

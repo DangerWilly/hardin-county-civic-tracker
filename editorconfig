@@ -1,0 +1,21 @@
+# EditorConfig — https://editorconfig.org
+# Consistent formatting across editors, OSes, and contributors.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{js,css,html,json,yml,yaml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false   # markdown uses trailing spaces for <br>
+
+[Makefile]
+indent_style = tab

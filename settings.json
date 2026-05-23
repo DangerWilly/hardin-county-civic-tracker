@@ -1,0 +1,28 @@
+{
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.rulers": [100],
+    "editor.renderWhitespace": "boundary",
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.eol": "\n",
+
+    "files.exclude": {
+        "**/.DS_Store": true,
+        "**/data/*.sqlite-wal": true,
+        "**/data/*.sqlite-shm": true
+    },
+
+    "[php]": {
+        "editor.tabSize": 4
+    },
+    "[javascript]": {
+        "editor.tabSize": 2
+    },
+    "[css]": {
+        "editor.tabSize": 2
+    },
+
+    "intelephense.environment.phpVersion": "8.3.0",
+    "intelephense.format.braces": "k&r"
+}
