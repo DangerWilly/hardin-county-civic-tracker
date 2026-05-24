@@ -88,6 +88,27 @@ function view(string $name, array $data = []): void
 }
 
 /**
+ * Like view(), but wraps the inner view in the admin layout instead of the
+ * public newspaper masthead. Used by every /admin/* handler.
+ */
+function admin_view(string $name, array $data = []): void
+{
+    // The admin layout always renders a logout form using csrf_field(), and
+    // most admin form views also use it. Loading csrf.php here means no
+    // handler can ever forget — eliminates an entire class of bug.
+    require_once APP_ROOT . '/src/csrf.php';
+
+    $title = $data['title'] ?? 'Admin';
+    extract($data, EXTR_SKIP);
+
+    ob_start();
+    require APP_VIEWS_DIR . '/' . $name . '.php';
+    $content = ob_get_clean();
+
+    require APP_VIEWS_DIR . '/admin_layout.php';
+}
+
+/**
  * Hash an IP with a server-side secret. Lets us rate-limit and detect abuse
  * without storing PII. Salt MUST be set in production .env — the default is
  * intentionally insecure so dev failures are loud.

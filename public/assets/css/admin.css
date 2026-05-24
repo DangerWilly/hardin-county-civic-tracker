@@ -1,0 +1,268 @@
+/* =============================================================
+   The Hardin Civic — admin.css
+   Loaded on top of site.css for /admin/* pages.
+   Intentionally plain: admin is a tool, not a publication.
+   ============================================================= */
+
+.admin-body {
+    background: #FAFAFA;
+    /* Defeat the paper-grain texture from site.css */
+    background-image: none;
+}
+
+/* ---- Admin bar (top nav) ----------------------------------- */
+
+.admin-bar {
+    background: #1A1614;
+    color: #F5F1E8;
+    padding: 0.6rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+    border-bottom: 3px solid var(--accent);
+    font-family: var(--sans);
+}
+
+.admin-bar a { color: #F5F1E8; text-decoration: none; }
+.admin-bar a:hover { color: #fff; }
+
+.admin-bar__brand {
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+}
+
+.admin-bar__nav {
+    display: flex;
+    gap: 1.2rem;
+}
+.admin-bar__nav a {
+    font-size: 0.85rem;
+    padding: 0.3rem 0;
+    border-bottom: 2px solid transparent;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.admin-bar__nav a.is-active {
+    border-bottom-color: var(--accent);
+    color: #fff;
+}
+
+.admin-bar__right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.85rem;
+}
+
+.admin-bar__logout {
+    margin: 0;
+    display: inline;
+}
+.admin-bar__logout button {
+    background: transparent;
+    color: #F5F1E8;
+    border: 1px solid #555;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: var(--sans);
+}
+.admin-bar__logout button:hover { background: var(--accent); border-color: var(--accent); }
+
+.admin-bar__public { font-size: 0.85rem; opacity: 0.85; }
+
+/* ---- Main content ------------------------------------------ */
+
+.admin-main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    font-family: var(--sans);
+    color: var(--ink);
+}
+
+.admin-main h1 {
+    font-family: var(--sans);
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    color: var(--ink);
+}
+.admin-main h2,
+.admin-h2 {
+    font-family: var(--sans);
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 2.2rem 0 1rem;
+    color: var(--ink);
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 0.4rem;
+}
+
+.admin-page-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.admin-lede {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+}
+
+.admin-empty {
+    background: #FFFDF7;
+    border: 1px dashed var(--rule);
+    padding: 1.5rem;
+    color: var(--ink-mute);
+    text-align: center;
+    font-size: 0.95rem;
+}
+
+/* ---- Stats cards on dashboard ------------------------------ */
+
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.8rem;
+    margin: 1.5rem 0 2rem;
+}
+.admin-stat {
+    background: #fff;
+    border: 1px solid var(--rule);
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+}
+.admin-stat__num {
+    font-family: var(--serif);
+    font-size: 2.1rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--accent);
+}
+.admin-stat__label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-mute);
+    margin-top: 0.4rem;
+}
+
+.admin-actions {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    margin: 1rem 0 2rem;
+}
+
+/* ---- Buttons ----------------------------------------------- */
+
+.admin-btn {
+    display: inline-block;
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid var(--ink);
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-family: var(--sans);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.admin-btn:hover { background: #F5F1E8; }
+.admin-btn--primary {
+    background: var(--ink);
+    color: #fff;
+    border-color: var(--ink);
+}
+.admin-btn--primary:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ---- Tables ------------------------------------------------ */
+
+.admin-table {
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+.admin-table thead { background: #F5F1E8; }
+.admin-table th,
+.admin-table td {
+    text-align: left;
+    padding: 0.6rem 0.9rem;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+}
+.admin-table th {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-mute);
+}
+.admin-table tbody tr:last-child td { border-bottom: none; }
+.admin-table tbody tr:hover { background: #FFFDF7; }
+
+.admin-badge {
+    display: inline-block;
+    background: #F5F1E8;
+    color: var(--ink-soft);
+    border: 1px solid var(--rule);
+    padding: 0.15rem 0.55rem;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.admin-badge--live      { background: #ffe9a8; }
+.admin-badge--completed { background: #e8e8e8; }
+.admin-badge--cancelled { background: #fdd; color: var(--accent-deep); }
+
+/* ---- Forms ------------------------------------------------- */
+
+.admin-form { max-width: 640px; }
+.admin-form .form__input { background: #fff; }
+
+.admin-form__row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0 1rem;
+}
+@media (min-width: 600px) {
+    .admin-form__row { grid-template-columns: 1fr 1fr; }
+}
+
+.admin-form__actions {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: 1.5rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--rule);
+}
+
+/* ---- Login page -------------------------------------------- */
+
+.admin-login {
+    max-width: 380px;
+    margin: 3rem auto;
+    background: #fff;
+    border: 1px solid var(--ink);
+    box-shadow: 6px 6px 0 0 var(--accent);
+    padding: 2rem 2rem 2.2rem;
+}
+.admin-login h1 {
+    font-family: var(--serif);
+    font-size: 1.5rem;
+}
+.admin-login__lede {
+    color: var(--ink-mute);
+    font-size: 0.9rem;
+    margin: 0.4rem 0 1.4rem;
+}
