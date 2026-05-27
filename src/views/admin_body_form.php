@@ -29,7 +29,7 @@ $kind_options = [
     <p class="form__error" role="alert"><?= e($error) ?></p>
 <?php endif; ?>
 
-<form action="/admin/bodies/new" method="post" class="form admin-form">
+<form action="/admin/bodies/new" method="post" class="form admin-form js-once" autocomplete="off">
     <?= csrf_field() ?>
 
     <label class="form__label" for="name">Name *</label>
@@ -88,7 +88,7 @@ $kind_options = [
         rows="4" maxlength="2000"><?= e($old['description'] ?? '') ?></textarea>
 
     <div class="admin-form__actions">
-        <button type="submit" class="admin-btn admin-btn--primary">Create body</button>
+        <button type="submit" class="admin-btn admin-btn--primary" data-busy-text="Creating…">Create body</button>
         <a href="/admin/bodies" class="admin-btn">Cancel</a>
     </div>
 </form>

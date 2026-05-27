@@ -37,6 +37,24 @@ function env(string $key, ?string $default = null): ?string
     return $val === false ? $default : $val;
 }
 
+/* ---------- Timezone ---------- */
+/*
+ * Set the default timezone for every PHP date/time function in this process.
+ *
+ * Why: HTML's <input type="datetime-local"> gives us "2026-06-10T19:00"
+ * with NO timezone info. PHP's strtotime() then interprets that string as
+ * the server's local time. On your Windows dev box that's Eastern. On the
+ * Hetzner VPS that's UTC by default. Same form input → different stored
+ * timestamps depending on which machine the request hits. Disaster.
+ *
+ * Setting APP_TIMEZONE in .env (default America/New_York) means the entire
+ * codebase agrees on what "7pm" means no matter where it's running.
+ *
+ * Database storage stays in unix epoch (timezone-agnostic integer). Only
+ * the conversion between user-visible strings ↔ epoch is affected.
+ */
+date_default_timezone_set(env('APP_TIMEZONE', 'America/New_York') ?? 'America/New_York');
+
 /* ---------- Error handling ---------- */
 
 $debug = env('APP_DEBUG', '0') === '1';

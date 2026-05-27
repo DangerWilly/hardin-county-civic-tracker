@@ -43,5 +43,7 @@ $section = $section ?? '';
     <?= $content ?>
 </main>
 
+<script src="/assets/js/site.js?v=2" defer></script>
+
 </body>
 </html>

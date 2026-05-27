@@ -88,6 +88,7 @@ sudo apt install -y php8.3-cli php8.3-sqlite3
 cp .env.example .env
 php tools/set_admin_password.php
 # Paste the two lines it prints (ADMIN_PASSWORD_HASH + ADMIN_COOKIE_SECRET) into .env
+# Default APP_TIMEZONE is America/New_York; change in .env if you're elsewhere.
 
 # 2. Database
 php migrations/migrate.php
@@ -261,4 +262,6 @@ Visit your domain. Sign into `/admin` over Tailscale. Done.
 - **Every state-changing handler** calls `csrf_guard()` first, then `rate_limit_guard(...)`. Admin handlers also call `admin_guard()`. Order matters: auth → CSRF → rate limit → work.
 - **Database-level pragmas live in `src/db.php`**, not in migrations. (Learned the hard way: `PRAGMA journal_mode = WAL` can't run inside a transaction.)
 - **Admin views use `admin_view()`** (admin layout); public views use `view()` (newspaper layout). The two are deliberately visually distinct so you always know which side you're on.
+- **Server time is always Eastern.** `bootstrap.php` calls `date_default_timezone_set(env('APP_TIMEZONE', 'America/New_York'))`. Stored timestamps are timezone-agnostic unix epoch ints; the TZ only affects parse/format at the edges.
+- **Forms with `class="js-once"`** auto-disable their submit button on click (via `public/assets/js/site.js`). Add the class + an optional `data-busy-text` attribute on the button to opt any new form in. Server-side validation still runs — JS is just polish.
 - **One coherent change per commit.** Imperative-mood commit messages ("Add X", not "added X" or "X added").

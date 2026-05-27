@@ -17,7 +17,7 @@ $next  = $next  ?? '/admin';
         <p class="form__error" role="alert"><?= e($error) ?></p>
     <?php endif; ?>
 
-    <form action="/admin/login" method="post" class="form">
+    <form action="/admin/login" method="post" class="form js-once">
         <?= csrf_field() ?>
         <input type="hidden" name="next" value="<?= e($next) ?>">
 
@@ -31,6 +31,6 @@ $next  = $next  ?? '/admin';
             autofocus
             required>
 
-        <button type="submit" class="admin-btn admin-btn--primary">Sign in</button>
+        <button type="submit" class="admin-btn admin-btn--primary" data-busy-text="Signing in…">Sign in</button>
     </form>
 </div>

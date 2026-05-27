@@ -55,6 +55,6 @@
     </p>
 </footer>
 
-<script src="/assets/js/site.js?v=1" defer></script>
+<script src="/assets/js/site.js?v=2" defer></script>
 </body>
 </html>

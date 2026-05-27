@@ -23,7 +23,7 @@ $error = $error ?? null;
             <p class="form__error" role="alert"><?= e($error) ?></p>
         <?php endif; ?>
 
-        <form class="form" action="/submit-correction" method="post" novalidate>
+        <form class="form js-once" action="/submit-correction" method="post" novalidate>
             <?= csrf_field() ?>
 
             <label class="form__label" for="where">Where on the site?</label>
@@ -49,7 +49,7 @@ $error = $error ?? null;
 
             <p class="form__hint">We don&rsquo;t store your name or email. We hash your IP for spam protection only.</p>
 
-            <button type="submit" class="ask__btn">Submit correction</button>
+            <button type="submit" class="ask__btn" data-busy-text="Submitting…">Submit correction</button>
         </form>
     </section>
 </main>
