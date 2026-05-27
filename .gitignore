@@ -5,3 +5,13 @@ data/*.sqlite-shm
 data/backups/
 *.log
 .DS_Store
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# IDE
+.idea/

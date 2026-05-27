@@ -41,16 +41,25 @@ Vanilla PHP + SQLite + nginx. Designed to run on a $4 Hetzner VPS behind a Cloud
 - `bodies` (city council, county commission, school board, township trustees, planning, zoning, library, parks&rec, other)
 - `meetings` with `summary` + `summary_at` columns ready for AI-cached summaries
 - `agenda_items` — line items within a meeting; each can carry its own AI-cached summary
-- `officials` + `official_terms` — schema in place for federal/state/county/city officials (admin UI lands next turn)
+- `officials` + `official_terms` — federal/state/county/city officials
+- `bills`, `bill_actions`, `bill_sponsorships` — Ohio legislation ingested from OpenStates
+- `worker_runs` — audit log of every Python worker run, including item counts and errors
+
+**Python workers**
+
+- `workers/ingest_openstates.py` — pulls OH General Assembly members + recently-updated OH bills + their actions/sponsorships from the OpenStates API. Idempotent, incremental (only fetches what changed since last run), rate-limit aware
+- Scheduled via `deploy/cron/civic.cron` — daily at 4 AM Eastern
+- See `workers/README.md` for the Python venv setup and the manual-run command
 
 **What's deliberately not built yet**
 
 - The AI ask box is structurally present on the homepage but **the submit button is disabled** — that's the next coding step once enough data is in the DB to ground it
-- No civic-data ingestion yet — Python workers (OpenStates, Congress.gov, Kenton site scraping) come after the admin UI is fleshed out
+- Public `/representatives` and `/bills` views — schema and ingested data are ready, public views aren't built yet
+- Officials admin UI — admin can already see them in the DB, no UI for create/edit yet
 - Editing & deleting bodies / meetings — currently create-only via admin
-- Officials admin UI + `/representatives` public views — schema is ready, views are not
 - Submissions moderation UI — submissions sit in the DB; admin queue page is the next admin feature
 - Agenda item editing post-creation — items are entered via the meeting textarea; not yet individually editable
+- Federal-level ingestion (Congress.gov) — Ohio state is in, federal comes later
 
 ---
 
@@ -84,7 +93,7 @@ sudo apt install -y php8.3-cli php8.3-sqlite3
 ### Then on any OS
 
 ```bash
-# 1. Config — copy template and generate secrets
+# 1. PHP config — copy template and generate secrets
 cp .env.example .env
 php tools/set_admin_password.php
 # Paste the two lines it prints (ADMIN_PASSWORD_HASH + ADMIN_COOKIE_SECRET) into .env
@@ -93,7 +102,13 @@ php tools/set_admin_password.php
 # 2. Database
 php migrations/migrate.php
 
-# 3. Dev server
+# 3. (Optional) Python workers
+python -m venv .venv
+source .venv/Scripts/activate     # Windows Git Bash; or source .venv/bin/activate elsewhere
+pip install -r workers/requirements.txt
+# Then add OPENSTATES_API_KEY to .env, get one from https://openstates.org/accounts/signup/
+
+# 4. Dev server
 php -S 127.0.0.1:8080 -t public public/index.php
 ```
 
@@ -198,12 +213,19 @@ hardin-county-civic-tracker/
 │   ├── 0002_seed_kenton.sql                 # Hardin + Kenton + Ohio + initial voter-info copy
 │   ├── 0003_ratelimit.sql                   # rate_limit_events
 │   ├── 0004_civic_data.sql                  # bodies, meetings, agenda_items, officials, official_terms
-│   └── 0005_seed_bodies.sql                 # seeds the 4 main bodies for Kenton + Hardin
+│   ├── 0005_seed_bodies.sql                 # seeds the 4 main bodies for Kenton + Hardin
+│   └── 0006_legislation.sql                 # bills, bill_actions, bill_sponsorships, worker_runs
 ├── tools/
 │   └── set_admin_password.php               # CLI: generate ADMIN_PASSWORD_HASH + ADMIN_COOKIE_SECRET
-├── workers/                                 # Python cron scripts (added in next steps)
+├── workers/                                 # Python cron jobs (independent of PHP, share only the DB)
+│   ├── README.md                            # venv setup, manual run, deploy
+│   ├── requirements.txt                     # pinned Python deps
+│   ├── _db.py                               # shared: connect to SQLite with project pragmas
+│   └── ingest_openstates.py                 # OH legislators + bills daily
 ├── data/civic.sqlite                        # the database (git-ignored)
-├── deploy/nginx/civic.conf                  # production vhost config
+├── deploy/
+│   ├── nginx/civic.conf                     # production vhost config
+│   └── cron/civic.cron                      # /etc/cron.d/ schedule for workers
 ├── .env.example                             # template — copy to .env, fill in secrets
 ├── .editorconfig                            # cross-editor formatting
 ├── .gitattributes                           # line-ending normalization
@@ -240,15 +262,15 @@ Visit your domain. Sign into `/admin` over Tailscale. Done.
 
 ## Roadmap (in build order)
 
-1. **Officials admin + public `/representatives`** — schema is already there; needs CRUD + a list/detail view per official
-2. **Edit & delete** for bodies and meetings (currently create-only)
-3. **Agenda item editing** — re-order, edit, delete individual items on a meeting
-4. **Submissions moderation queue** at `/admin/submissions` — approve / reject / spam
-5. **Python worker `ingest_openstates.py`** — Ohio state bills + state legislators (clean API, no scraping)
+1. **Public `/representatives` and `/bills` views** — surface the OpenStates-ingested data on the public site
+2. **Officials admin** — manual CRUD for officials OpenStates doesn't cover (sheriff, county auditor, mayor, council members, etc.)
+3. **Edit & delete** for bodies and meetings (currently create-only)
+4. **Agenda item editing** — re-order, edit, delete individual items on a meeting
+5. **Submissions moderation queue** at `/admin/submissions` — approve / reject / spam
 6. **Python worker `ingest_congress.py`** — your federal reps + OH-04 bills (Congress.gov API)
 7. **Python worker `scrape_kenton_meetings.py`** — Kenton city site, agenda PDFs (the hard one)
 8. **Wire `/ask` to xAI** — at this point the DB has enough context for the AI to give grounded local answers
-9. **Python worker `summarize_pending.py`** — find agenda items / meetings without summaries, call xAI, cache to `ai_calls`
+9. **Python worker `summarize_pending.py`** — find agenda items / meetings / bills without summaries, call xAI, cache to `ai_calls`
 10. **Petitions** (last — anonymous + spam needs more thought)
 
 ---

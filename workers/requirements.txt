@@ -1,0 +1,15 @@
+# Python dependencies for the workers.
+#
+# Pinned to specific versions (not >= ranges) for reproducibility:
+# the version that works on your Windows dev box should be the same one
+# that runs on the Hetzner VPS, period. Bump versions deliberately, not
+# accidentally.
+#
+# Install with:
+#     python -m venv .venv
+#     source .venv/Scripts/activate     # Windows Git Bash
+#     # OR: source .venv/bin/activate   # Linux/macOS
+#     pip install -r workers/requirements.txt
+
+requests==2.32.3
+python-dotenv==1.0.1

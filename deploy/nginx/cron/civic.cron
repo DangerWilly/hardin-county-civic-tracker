@@ -1,0 +1,26 @@
+# /etc/cron.d/civic
+# The Hardin Civic — scheduled workers.
+#
+# Install on the VPS:
+#     sudo cp deploy/cron/civic.cron /etc/cron.d/civic
+#     sudo chmod 644 /etc/cron.d/civic
+#     sudo chown root:root /etc/cron.d/civic
+#
+# /etc/cron.d files require a username column (unlike user crontabs from
+# `crontab -e`). We run as www-data, the same user nginx + php-fpm use,
+# so the worker's writes don't create permission mismatches on the
+# SQLite file or its WAL companions.
+#
+# Times are server-local. Set the server's timezone to America/New_York
+# (see APP_TIMEZONE in .env and `timedatectl set-timezone America/New_York`)
+# or these will fire at the wrong hour.
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+MAILTO=""
+
+# Run the OpenStates ingester at 4:00am Eastern.
+# Why 4am: Ohio Statehouse is asleep, our site has near-zero traffic, the
+# API itself is quiet. Also gives the rest of the night for our nightly
+# SQLite backup (next worker we'll add) to find a quiescent DB.
+0 4 * * *  www-data  cd /var/www/civic && .venv/bin/python workers/ingest_openstates.py >> /var/log/civic/ingest.log 2>&1
