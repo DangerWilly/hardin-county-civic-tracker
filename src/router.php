@@ -31,10 +31,8 @@ $routes = [
 
     ['GET', '#^/bills/?$#',           'route_bills_index'],
     ['GET', '#^/bills/(\d+)/?$#',     'route_bill_show'],
-    ['GET', '#^/representatives/?$#', fn() => route_coming_soon(
-        'Representatives',
-        'Your federal, state, and county officials — with contact info, voting records, and the bills they have championed.'
-    )],
+    ['GET', '#^/representatives/?$#',       'route_representatives_index'],
+    ['GET', '#^/representatives/([a-z0-9\-]+)/?$#', 'route_representative_show'],
     ['GET',  '#^/submit-correction/?$#', 'route_submit_correction_get'],
     ['POST', '#^/submit-correction/?$#', 'route_submit_correction_post'],
 
@@ -783,5 +781,101 @@ function route_bill_show(string $id): void
         'actions'  => $actions,
         'sponsors' => $sponsors,
         'versions' => $versions,
+    ]);
+}
+
+/* ---------- Public representatives handlers ---------------------------
+ *
+ * GROUPING LOGIC for the list page
+ *
+ * We want to display officials in chamber order: Senate first, then House,
+ * then anyone else (county officials, mayors, etc. we add manually). The
+ * raw `officials.chamber` column is 'upper' / 'lower' / NULL — OpenStates'
+ * convention. We translate to friendly labels in PHP because labels are a
+ * presentation concern, not a data concern.
+ *
+ * DETAIL: we fetch sponsorship counts in two queries instead of one big
+ * JOIN. The big-join approach would return 1 row per bill, but counting
+ * total sponsorships and getting the recent 25 are different shapes of
+ * query — easier to read with two simple queries than one clever one.
+ * --------------------------------------------------------------------- */
+
+function route_representatives_index(): void
+{
+    // ORDER BY clause: chamber priority (upper before lower before NULL),
+    // then alphabetically by full_name within each chamber. The CASE makes
+    // the chamber ordering explicit rather than relying on alphabetical
+    // 'lower' < 'upper' (which happens to work but is fragile).
+    $rows = db()->query("
+        SELECT id, slug, full_name, title, party, photo_url,
+               current_district, chamber, source
+          FROM officials
+         ORDER BY
+            CASE chamber
+                WHEN 'upper' THEN 1
+                WHEN 'lower' THEN 2
+                ELSE 3
+            END,
+            full_name ASC
+    ")->fetchAll();
+
+    // Group by friendly chamber label
+    $groups = [];
+    foreach ($rows as $r) {
+        $label = match ($r['chamber']) {
+            'upper' => 'Ohio Senate',
+            'lower' => 'Ohio House of Representatives',
+            default => 'Other Officials',
+        };
+        $groups[$label][] = $r;
+    }
+
+    view('representatives', [
+        'title'  => 'Representatives',
+        'groups' => $groups,
+        'total'  => count($rows),
+    ]);
+}
+
+function route_representative_show(string $slug): void
+{
+    $stmt = db()->prepare("SELECT * FROM officials WHERE slug = ?");
+    $stmt->execute([$slug]);
+    $official = $stmt->fetch();
+
+    if (!$official) {
+        http_response_code(404);
+        view('not_found', ['title' => 'Representative not found']);
+        return;
+    }
+
+    // Count total sponsorships (for the "see all N" hint). DISTINCT bill_id
+    // because an official can occasionally appear twice on the same bill
+    // (primary + cosponsor on different versions).
+    $count_stmt = db()->prepare("
+        SELECT COUNT(DISTINCT bs.bill_id)
+          FROM bill_sponsorships bs
+         WHERE bs.official_id = ?
+    ");
+    $count_stmt->execute([(int) $official['id']]);
+    $sponsor_total = (int) $count_stmt->fetchColumn();
+
+    // Recent 25 sponsored bills, most-recent-action first
+    $sponsored_stmt = db()->prepare("
+        SELECT DISTINCT b.id, b.identifier, b.title, b.classification, b.last_action_at
+          FROM bills b
+          JOIN bill_sponsorships bs ON bs.bill_id = b.id
+         WHERE bs.official_id = ?
+         ORDER BY b.last_action_at DESC NULLS LAST, b.id DESC
+         LIMIT 25
+    ");
+    $sponsored_stmt->execute([(int) $official['id']]);
+    $sponsored = $sponsored_stmt->fetchAll();
+
+    view('representative_detail', [
+        'title'         => $official['full_name'],
+        'official'      => $official,
+        'sponsored'     => $sponsored,
+        'sponsor_total' => $sponsor_total,
     ]);
 }

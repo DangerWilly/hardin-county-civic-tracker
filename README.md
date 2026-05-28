@@ -18,6 +18,8 @@ Vanilla PHP + SQLite + nginx. Designed to run on a $4 Hetzner VPS behind a Cloud
 - **`/meetings/{id}`** — single-meeting detail page with agenda items and links to official agenda/minutes/video
 - **`/bills`** — list of recent Ohio General Assembly bills with filter chips (House/Senate/Resolution) and full-text search, sorted by most recent action
 - **`/bills/{id}`** — single bill page with "About" section (abstract or AI summary when available), subject tags, bill text versions across revisions, sponsors (linked to officials), and full action timeline
+- **`/representatives`** — Ohio legislators grouped by chamber (Senate, House), with party badge + photo + district
+- **`/representatives/{slug}`** — single official with contact info, biography, and their recent sponsored bills (links back to each bill)
 - **`/submit-correction`** — anonymous correction form with moderation queue (writes to `submissions` table, `status='pending'`)
 - **`/healthz`** — plaintext OK for monitoring / uptime pings
 
@@ -57,8 +59,7 @@ Vanilla PHP + SQLite + nginx. Designed to run on a $4 Hetzner VPS behind a Cloud
 **What's deliberately not built yet**
 
 - The AI ask box is structurally present on the homepage but **the submit button is disabled** — that's the next coding step once enough data is in the DB to ground it
-- Public `/representatives` views — schema and data are ready, view comes next
-- Officials admin UI — admin can already see them in the DB, no UI for create/edit yet
+- Officials admin UI — admin can already see them in the DB, no UI for create/edit yet (used for non-OpenStates officials: sheriff, county auditor, mayor, council members, etc.)
 - Editing & deleting bodies / meetings — currently create-only via admin
 - Submissions moderation UI — submissions sit in the DB; admin queue page is the next admin feature
 - Agenda item editing post-creation — items are entered via the meeting textarea; not yet individually editable
@@ -123,7 +124,7 @@ Open <http://127.0.0.1:8080/> in your browser. You should see:
 - `/voter-info` renders the seeded markdown content
 - `/meetings` shows an empty-state until you add some via admin
 - `/submit-correction` shows a working form (CSRF-protected, rate-limited)
-- `/bills`, `/representatives` show clean "in the works" pages
+- `/bills`, `/representatives` show real data once you've run `python workers/ingest_openstates.py`
 - `/anything-else` shows a typeset 404
 
 Then go to <http://127.0.0.1:8080/admin>, sign in with the password you just set, and start entering meeting data. The four bodies are pre-seeded so you can create a meeting immediately.
@@ -200,9 +201,11 @@ hardin-county-civic-tracker/
 │       ├── meeting_detail.php               # single meeting + agenda items
 │       ├── bills.php                        # public bills list with filter chips + search
 │       ├── bill_detail.php                  # single bill: about, text versions, sponsors, timeline
+│       ├── representatives.php              # public officials list, grouped by chamber
+│       ├── representative_detail.php        # single official: contact, bio, sponsored bills
 │       ├── submit_correction.php            # public correction form
 │       ├── submit_correction_thanks.php     # post-submit confirmation
-│       ├── coming_soon.php                  # used by /bills, /representatives
+│       ├── coming_soon.php                  # generic stub used by routes not yet implemented
 │       ├── not_found.php                    # 404
 │       ├── error.php                        # 403 / 429 / 422 — used by guards
 │       ├── admin_layout.php                 # admin top-bar wrapper
@@ -269,16 +272,15 @@ Visit your domain. Sign into `/admin` over Tailscale. Done.
 
 ## Roadmap (in build order)
 
-1. **Public `/representatives` views** — surface the OpenStates-ingested officials data
-2. **Officials admin** — manual CRUD for officials OpenStates doesn't cover (sheriff, county auditor, mayor, council members, etc.)
-3. **Edit & delete** for bodies and meetings (currently create-only)
-4. **Agenda item editing** — re-order, edit, delete individual items on a meeting
-5. **Submissions moderation queue** at `/admin/submissions` — approve / reject / spam
-6. **Python worker `ingest_congress.py`** — your federal reps + OH-04 bills (Congress.gov API)
-7. **Python worker `scrape_kenton_meetings.py`** — Kenton city site, agenda PDFs (the hard one)
-8. **Wire `/ask` to xAI** — at this point the DB has enough context for the AI to give grounded local answers
-9. **Python worker `summarize_pending.py`** — find agenda items / meetings / bills without summaries, call xAI, cache to `ai_calls`
-10. **Petitions** (last — anonymous + spam needs more thought)
+1. **Officials admin** — manual CRUD for officials OpenStates doesn't cover (sheriff, county auditor, mayor, council members, etc.)
+2. **Edit & delete** for bodies and meetings (currently create-only)
+3. **Agenda item editing** — re-order, edit, delete individual items on a meeting
+4. **Submissions moderation queue** at `/admin/submissions` — approve / reject / spam
+5. **Python worker `ingest_congress.py`** — your federal reps + OH-04 bills (Congress.gov API)
+6. **Python worker `scrape_kenton_meetings.py`** — Kenton city site, agenda PDFs (the hard one)
+7. **Wire `/ask` to xAI** — at this point the DB has enough context for the AI to give grounded local answers
+8. **Python worker `summarize_pending.py`** — find agenda items / meetings / bills without summaries, call xAI, cache to `ai_calls`
+9. **Petitions** (last — anonymous + spam needs more thought)
 
 ---
 
