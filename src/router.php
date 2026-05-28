@@ -29,10 +29,8 @@ $routes = [
     ['GET', '#^/meetings/?$#',           'route_meetings_index'],
     ['GET', '#^/meetings/(\d+)/?$#',     'route_meeting_show'],
 
-    ['GET', '#^/bills/?$#',           fn() => route_coming_soon(
-        'Bills',
-        'Recent bills from the Ohio General Assembly affecting Hardin County, in plain English. Sourced via OpenStates.'
-    )],
+    ['GET', '#^/bills/?$#',           'route_bills_index'],
+    ['GET', '#^/bills/(\d+)/?$#',     'route_bill_show'],
     ['GET', '#^/representatives/?$#', fn() => route_coming_soon(
         'Representatives',
         'Your federal, state, and county officials — with contact info, voting records, and the bills they have championed.'
@@ -612,4 +610,164 @@ function route_admin_meetings_new_post(): void
 
     header('Location: /meetings/' . $meeting_id);
     exit;
+}
+
+/* ---------- Public bills handlers ---------------------------------------
+ * /bills        — list with filter chips, search, pagination
+ * /bills/{id}   — detail page with actions and sponsors
+ *
+ * Search uses FTS5 (see migration 0007). We sanitize the user's query
+ * before passing to FTS — FTS5 has its own mini-query language with
+ * operators like AND, OR, NOT, NEAR, * — and naive forwarding lets a
+ * malicious user crash queries or do weird things. We restrict to
+ * "phrase" queries by quoting individual terms.
+ * --------------------------------------------------------------------- */
+
+function route_bills_index(): void
+{
+    $filter   = (string) ($_GET['filter'] ?? 'all');
+    $query    = trim((string) ($_GET['q'] ?? ''));
+    $page     = max(1, (int) ($_GET['page'] ?? 1));
+    $per_page = 25;
+
+    if (!in_array($filter, ['all','house','senate','resolution'], true)) {
+        $filter = 'all';
+    }
+
+    // Filter clause — identifier prefix mapping
+    $filter_sql = '';
+    $filter_params = [];
+    if ($filter === 'house') {
+        $filter_sql = " AND (b.identifier LIKE 'HB %' OR b.identifier LIKE 'HR %' OR b.identifier LIKE 'HJR %' OR b.identifier LIKE 'HCR %')";
+    } elseif ($filter === 'senate') {
+        $filter_sql = " AND (b.identifier LIKE 'SB %' OR b.identifier LIKE 'SR %' OR b.identifier LIKE 'SJR %' OR b.identifier LIKE 'SCR %')";
+    } elseif ($filter === 'resolution') {
+        $filter_sql = " AND (b.identifier LIKE 'HR %' OR b.identifier LIKE 'SR %' OR b.identifier LIKE 'HJR %' OR b.identifier LIKE 'SJR %' OR b.identifier LIKE 'HCR %' OR b.identifier LIKE 'SCR %')";
+    }
+
+    // Build SQL. With search, JOIN against FTS5; without search, plain table scan
+    // sorted by last_action_at. Counts come from a sibling query so pagination
+    // math is accurate.
+    if ($query !== '') {
+        $fts_query = bills_sanitize_fts_query($query);
+        $pdo = db();
+        $count_stmt = $pdo->prepare("
+            SELECT COUNT(*)
+              FROM bills_fts f
+              JOIN bills b ON b.id = f.rowid
+             WHERE bills_fts MATCH :q $filter_sql
+        ");
+        $count_stmt->bindValue(':q', $fts_query, PDO::PARAM_STR);
+        $count_stmt->execute();
+        $total = (int) $count_stmt->fetchColumn();
+
+        $list_stmt = $pdo->prepare("
+            SELECT b.id, b.identifier, b.title, b.session, b.last_action_at
+              FROM bills_fts f
+              JOIN bills b ON b.id = f.rowid
+             WHERE bills_fts MATCH :q $filter_sql
+             ORDER BY rank, b.last_action_at DESC
+             LIMIT :limit OFFSET :offset
+        ");
+        $list_stmt->bindValue(':q', $fts_query, PDO::PARAM_STR);
+        $list_stmt->bindValue(':limit',  $per_page,                   PDO::PARAM_INT);
+        $list_stmt->bindValue(':offset', ($page - 1) * $per_page,     PDO::PARAM_INT);
+        $list_stmt->execute();
+        $bills = $list_stmt->fetchAll();
+    } else {
+        $pdo = db();
+        $total = (int) $pdo->query("SELECT COUNT(*) FROM bills b WHERE 1=1 $filter_sql")->fetchColumn();
+
+        $list_stmt = $pdo->prepare("
+            SELECT b.id, b.identifier, b.title, b.session, b.last_action_at
+              FROM bills b
+             WHERE 1=1 $filter_sql
+             ORDER BY b.last_action_at DESC NULLS LAST, b.id DESC
+             LIMIT :limit OFFSET :offset
+        ");
+        $list_stmt->bindValue(':limit',  $per_page,                  PDO::PARAM_INT);
+        $list_stmt->bindValue(':offset', ($page - 1) * $per_page,    PDO::PARAM_INT);
+        $list_stmt->execute();
+        $bills = $list_stmt->fetchAll();
+    }
+
+    $pages = max(1, (int) ceil($total / $per_page));
+
+    view('bills', [
+        'title'    => 'Ohio Bills',
+        'bills'    => $bills,
+        'total'    => $total,
+        'page'     => $page,
+        'pages'    => $pages,
+        'filter'   => $filter,
+        'query'    => $query,
+        'per_page' => $per_page,
+    ]);
+}
+
+/**
+ * Convert user-supplied search text into a safe FTS5 query string.
+ *
+ * FTS5's query language treats AND, OR, NOT, NEAR, *, ", :, ^, +, -, ( ) as
+ * operators. Forwarding raw user input means:
+ *   - "school AND" → syntax error
+ *   - "school OR sex" → boolean instead of phrase
+ *   - "school:" → column scoping (unwanted)
+ *
+ * Strategy: extract word-ish tokens, quote each one, AND them together.
+ * Single tokens become phrase queries (matches exact word), multi-token
+ * input becomes implicit AND of phrases — which is the most natural
+ * "user expects this to work" behavior.
+ */
+function bills_sanitize_fts_query(string $raw): string
+{
+    // Pull out tokens of [A-Za-z0-9] plus space-allowed inside (so "HB 446"
+    // could be one token by user intent, but easier to split and AND).
+    if (!preg_match_all('/[A-Za-z0-9]+/u', $raw, $m) || empty($m[0])) {
+        return '""';   // matches nothing — safer than throwing
+    }
+    $tokens = array_slice(array_unique($m[0]), 0, 8);   // cap at 8 tokens
+    return implode(' ', array_map(fn($t) => '"' . $t . '"', $tokens));
+}
+
+function route_bill_show(string $id): void
+{
+    $stmt = db()->prepare("SELECT * FROM bills WHERE id = ?");
+    $stmt->execute([(int) $id]);
+    $bill = $stmt->fetch();
+
+    if (!$bill) {
+        http_response_code(404);
+        view('not_found', ['title' => 'Bill not found']);
+        return;
+    }
+
+    $actions_stmt = db()->prepare("
+        SELECT acted_on, organization, description, classification
+          FROM bill_actions
+         WHERE bill_id = ?
+         ORDER BY acted_on ASC, \"order\" ASC, id ASC
+    ");
+    $actions_stmt->execute([(int) $bill['id']]);
+    $actions = $actions_stmt->fetchAll();
+
+    // Sponsors with optional linkage to officials. LEFT JOIN so unlinked
+    // sponsors still show up by name.
+    $sponsors_stmt = db()->prepare("
+        SELECT bs.sponsor_name, bs.classification, bs.official_id,
+               o.slug AS official_slug, o.full_name AS linked_name
+          FROM bill_sponsorships bs
+          LEFT JOIN officials o ON o.id = bs.official_id
+         WHERE bs.bill_id = ?
+         ORDER BY (bs.classification = 'primary') DESC, bs.sponsor_name ASC
+    ");
+    $sponsors_stmt->execute([(int) $bill['id']]);
+    $sponsors = $sponsors_stmt->fetchAll();
+
+    view('bill_detail', [
+        'title'    => $bill['identifier'] . ': ' . $bill['title'],
+        'bill'     => $bill,
+        'actions'  => $actions,
+        'sponsors' => $sponsors,
+    ]);
 }

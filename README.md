@@ -16,6 +16,8 @@ Vanilla PHP + SQLite + nginx. Designed to run on a $4 Hetzner VPS behind a Cloud
 - **`/voter-info`** page rendered from `content_pages` via a tiny safe markdown parser
 - **`/meetings`** — list of upcoming + recent meetings, grouped by body
 - **`/meetings/{id}`** — single-meeting detail page with agenda items and links to official agenda/minutes/video
+- **`/bills`** — list of recent Ohio General Assembly bills with filter chips (House/Senate/Resolution) and full-text search, sorted by most recent action
+- **`/bills/{id}`** — single bill page with abstract, subject tags, sponsors (linked to officials when known), and full action timeline
 - **`/submit-correction`** — anonymous correction form with moderation queue (writes to `submissions` table, `status='pending'`)
 - **`/healthz`** — plaintext OK for monitoring / uptime pings
 
@@ -43,6 +45,7 @@ Vanilla PHP + SQLite + nginx. Designed to run on a $4 Hetzner VPS behind a Cloud
 - `agenda_items` — line items within a meeting; each can carry its own AI-cached summary
 - `officials` + `official_terms` — federal/state/county/city officials
 - `bills`, `bill_actions`, `bill_sponsorships` — Ohio legislation ingested from OpenStates
+- `bills_fts` — SQLite FTS5 virtual table for fast full-text search; auto-synced via triggers
 - `worker_runs` — audit log of every Python worker run, including item counts and errors
 
 **Python workers**
@@ -54,7 +57,7 @@ Vanilla PHP + SQLite + nginx. Designed to run on a $4 Hetzner VPS behind a Cloud
 **What's deliberately not built yet**
 
 - The AI ask box is structurally present on the homepage but **the submit button is disabled** — that's the next coding step once enough data is in the DB to ground it
-- Public `/representatives` and `/bills` views — schema and ingested data are ready, public views aren't built yet
+- Public `/representatives` views — schema and data are ready, view comes next
 - Officials admin UI — admin can already see them in the DB, no UI for create/edit yet
 - Editing & deleting bodies / meetings — currently create-only via admin
 - Submissions moderation UI — submissions sit in the DB; admin queue page is the next admin feature
@@ -195,6 +198,8 @@ hardin-county-civic-tracker/
 │       ├── voter_info.php                   # /voter-info content
 │       ├── meetings.php                     # public meetings list
 │       ├── meeting_detail.php               # single meeting + agenda items
+│       ├── bills.php                        # public bills list with filter chips + search
+│       ├── bill_detail.php                  # single bill with sponsors + timeline
 │       ├── submit_correction.php            # public correction form
 │       ├── submit_correction_thanks.php     # post-submit confirmation
 │       ├── coming_soon.php                  # used by /bills, /representatives
@@ -214,7 +219,8 @@ hardin-county-civic-tracker/
 │   ├── 0003_ratelimit.sql                   # rate_limit_events
 │   ├── 0004_civic_data.sql                  # bodies, meetings, agenda_items, officials, official_terms
 │   ├── 0005_seed_bodies.sql                 # seeds the 4 main bodies for Kenton + Hardin
-│   └── 0006_legislation.sql                 # bills, bill_actions, bill_sponsorships, worker_runs
+│   ├── 0006_legislation.sql                 # bills, bill_actions, bill_sponsorships, worker_runs
+│   └── 0007_bills_fts.sql                   # FTS5 search index for bills + triggers to keep it in sync
 ├── tools/
 │   └── set_admin_password.php               # CLI: generate ADMIN_PASSWORD_HASH + ADMIN_COOKIE_SECRET
 ├── workers/                                 # Python cron jobs (independent of PHP, share only the DB)
@@ -262,7 +268,7 @@ Visit your domain. Sign into `/admin` over Tailscale. Done.
 
 ## Roadmap (in build order)
 
-1. **Public `/representatives` and `/bills` views** — surface the OpenStates-ingested data on the public site
+1. **Public `/representatives` views** — surface the OpenStates-ingested officials data
 2. **Officials admin** — manual CRUD for officials OpenStates doesn't cover (sheriff, county auditor, mayor, council members, etc.)
 3. **Edit & delete** for bodies and meetings (currently create-only)
 4. **Agenda item editing** — re-order, edit, delete individual items on a meeting
