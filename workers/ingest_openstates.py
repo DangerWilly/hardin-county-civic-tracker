@@ -289,7 +289,7 @@ def task_bills() -> None:
             # comma-joined string. requests serializes a list as
             # ?include=sponsorships&include=actions, which matches what the
             # API validates against its enum.
-            "include":        ["sponsorships", "actions"],
+            "include":        ["sponsorships", "actions", "versions"],
         }
 
         items_seen = 0
@@ -393,6 +393,41 @@ def upsert_bill(conn, bill: dict, oh_jur_id: int) -> bool:
             """, (bill_id, official_id, sponsor_name, classification))
         except Exception:
             pass                                # duplicate sponsor_name on same bill — ignore
+
+    # Versions: delete-and-replace, same pattern as actions/sponsorships.
+    # OpenStates emits each version with one or more links; we pick the
+    # best link and store one row per version. Preferred link order is
+    # PDF first (most stable, what people actually read), HTML second,
+    # whatever's left third.
+    conn.execute("DELETE FROM bill_versions WHERE bill_id=?", (bill_id,))
+    for i, v in enumerate(bill.get("versions") or []):
+        note = (v.get("note") or "").strip()
+        if not note:
+            continue
+        issued_at = parse_iso(v.get("date"))
+        # Pick the best link from the version's `links` array
+        links = v.get("links") or []
+        chosen_url = None
+        chosen_type = None
+        for media_pref in ("application/pdf", "text/html"):
+            for link in links:
+                if link.get("media_type") == media_pref and link.get("url"):
+                    chosen_url, chosen_type = link["url"], media_pref
+                    break
+            if chosen_url:
+                break
+        # Fallback: first link with any URL
+        if not chosen_url and links:
+            chosen_url = links[0].get("url")
+            chosen_type = links[0].get("media_type")
+        try:
+            conn.execute("""
+                INSERT INTO bill_versions
+                    (bill_id, note, issued_at, url, media_type, "order")
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (bill_id, note, issued_at, chosen_url, chosen_type, i))
+        except Exception:
+            pass                                # UNIQUE conflict — already replaced above
 
     return True                                 # we touched the row
 

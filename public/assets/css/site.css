@@ -974,6 +974,118 @@ textarea.form__input { resize: vertical; }
     margin-top: 0.2rem;
 }
 
+/* ---- Bill "About this bill" section ------------------------- */
+
+.bill__about {
+    background: #FFFDF7;
+    border-left: 4px solid var(--accent);
+    padding: 1.2rem 1.5rem 1rem;
+    margin: 1.5rem 0 1.8rem;
+}
+.bill__about--empty {
+    background: transparent;
+    border-left-color: var(--rule);
+    color: var(--ink-mute);
+}
+.bill__about-kicker {
+    margin-bottom: 0.5rem !important;
+    color: var(--accent);
+}
+.bill__about--empty .bill__about-kicker {
+    color: var(--ink-mute);
+}
+.bill__about-body {
+    font-family: var(--serif);
+    font-size: 1.08rem;
+    line-height: 1.55;
+    color: var(--ink);
+}
+.bill__about-body p { margin-bottom: 0.6rem; }
+.bill__about-body p:last-child { margin-bottom: 0; }
+.bill__about-disclaimer {
+    margin-top: 0.9rem;
+    padding-top: 0.7rem;
+    border-top: 1px dashed var(--rule);
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    color: var(--ink-mute);
+    font-style: italic;
+}
+
+/* ---- Bill versions list ------------------------------------- */
+
+.bill__versions-intro {
+    color: var(--ink-soft);
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+}
+
+.bill__versions {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem;
+    display: grid;
+    gap: 0.6rem;
+}
+
+.bill__version {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.6rem 1rem;
+    padding: 0.85rem 1rem;
+    background: #FFFDF7;
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+}
+.bill__version-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    flex: 1 1 200px;
+    min-width: 0;
+}
+.bill__version-note {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.2;
+}
+.bill__version-date {
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.bill__version-link {
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    padding: 0.4rem 0.9rem;
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    white-space: nowrap;
+}
+.bill__version-link:hover {
+    background: var(--ink);
+    color: var(--paper);
+}
+.bill__version-link--missing {
+    border-color: var(--rule);
+    color: var(--ink-mute);
+    cursor: default;
+}
+.bill__version-link--missing:hover {
+    background: transparent;
+    color: var(--ink-mute);
+}
+
 /* ---- Reduced motion ----------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {

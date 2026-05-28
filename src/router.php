@@ -764,10 +764,24 @@ function route_bill_show(string $id): void
     $sponsors_stmt->execute([(int) $bill['id']]);
     $sponsors = $sponsors_stmt->fetchAll();
 
+    // Bill versions, oldest first — the "evolution over time" view. The
+    // `order` column comes from OpenStates' position in their versions
+    // array and is the most reliable sort: a bill might have two versions
+    // on the same day, but their order in the API response is meaningful.
+    $versions_stmt = db()->prepare('
+        SELECT id, note, issued_at, url, media_type, "order"
+          FROM bill_versions
+         WHERE bill_id = ?
+         ORDER BY "order" ASC, issued_at ASC, id ASC
+    ');
+    $versions_stmt->execute([(int) $bill['id']]);
+    $versions = $versions_stmt->fetchAll();
+
     view('bill_detail', [
         'title'    => $bill['identifier'] . ': ' . $bill['title'],
         'bill'     => $bill,
         'actions'  => $actions,
         'sponsors' => $sponsors,
+        'versions' => $versions,
     ]);
 }

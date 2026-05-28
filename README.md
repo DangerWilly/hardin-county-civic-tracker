@@ -17,7 +17,7 @@ Vanilla PHP + SQLite + nginx. Designed to run on a $4 Hetzner VPS behind a Cloud
 - **`/meetings`** — list of upcoming + recent meetings, grouped by body
 - **`/meetings/{id}`** — single-meeting detail page with agenda items and links to official agenda/minutes/video
 - **`/bills`** — list of recent Ohio General Assembly bills with filter chips (House/Senate/Resolution) and full-text search, sorted by most recent action
-- **`/bills/{id}`** — single bill page with abstract, subject tags, sponsors (linked to officials when known), and full action timeline
+- **`/bills/{id}`** — single bill page with "About" section (abstract or AI summary when available), subject tags, bill text versions across revisions, sponsors (linked to officials), and full action timeline
 - **`/submit-correction`** — anonymous correction form with moderation queue (writes to `submissions` table, `status='pending'`)
 - **`/healthz`** — plaintext OK for monitoring / uptime pings
 
@@ -44,7 +44,7 @@ Vanilla PHP + SQLite + nginx. Designed to run on a $4 Hetzner VPS behind a Cloud
 - `meetings` with `summary` + `summary_at` columns ready for AI-cached summaries
 - `agenda_items` — line items within a meeting; each can carry its own AI-cached summary
 - `officials` + `official_terms` — federal/state/county/city officials
-- `bills`, `bill_actions`, `bill_sponsorships` — Ohio legislation ingested from OpenStates
+- `bills`, `bill_actions`, `bill_sponsorships`, `bill_versions` — Ohio legislation ingested from OpenStates, with one row per revision of each bill's text
 - `bills_fts` — SQLite FTS5 virtual table for fast full-text search; auto-synced via triggers
 - `worker_runs` — audit log of every Python worker run, including item counts and errors
 
@@ -199,7 +199,7 @@ hardin-county-civic-tracker/
 │       ├── meetings.php                     # public meetings list
 │       ├── meeting_detail.php               # single meeting + agenda items
 │       ├── bills.php                        # public bills list with filter chips + search
-│       ├── bill_detail.php                  # single bill with sponsors + timeline
+│       ├── bill_detail.php                  # single bill: about, text versions, sponsors, timeline
 │       ├── submit_correction.php            # public correction form
 │       ├── submit_correction_thanks.php     # post-submit confirmation
 │       ├── coming_soon.php                  # used by /bills, /representatives
@@ -220,7 +220,8 @@ hardin-county-civic-tracker/
 │   ├── 0004_civic_data.sql                  # bodies, meetings, agenda_items, officials, official_terms
 │   ├── 0005_seed_bodies.sql                 # seeds the 4 main bodies for Kenton + Hardin
 │   ├── 0006_legislation.sql                 # bills, bill_actions, bill_sponsorships, worker_runs
-│   └── 0007_bills_fts.sql                   # FTS5 search index for bills + triggers to keep it in sync
+│   ├── 0007_bills_fts.sql                   # FTS5 search index for bills + triggers to keep it in sync
+│   └── 0008_bill_versions.sql               # bill_versions table — each revision of a bill's text
 ├── tools/
 │   └── set_admin_password.php               # CLI: generate ADMIN_PASSWORD_HASH + ADMIN_COOKIE_SECRET
 ├── workers/                                 # Python cron jobs (independent of PHP, share only the DB)

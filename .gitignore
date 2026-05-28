@@ -15,3 +15,6 @@ __pycache__/
 
 # IDE
 .idea/
+
+# Personal cheatsheet — see notes.example.md for the committed template
+notes.md
