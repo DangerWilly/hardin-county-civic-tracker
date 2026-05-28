@@ -30,16 +30,17 @@ $sponsor_total = $sponsor_total ?? 0;
     <article class="article" style="max-width: 760px;">
 
         <div class="rep-header">
-            <?php if (!empty($official['photo_url'])): ?>
-                <img class="rep-header__photo"
-                     src="<?= e($official['photo_url']) ?>"
-                     alt=""
-                     referrerpolicy="no-referrer">
-            <?php else: ?>
-                <div class="rep-header__photo rep-header__photo--placeholder" aria-hidden="true">
-                    <?= e(strtoupper(substr((string) $official['full_name'], 0, 1))) ?>
-                </div>
-            <?php endif; ?>
+            <?php $initial = e(strtoupper(substr((string) $official['full_name'], 0, 1))); ?>
+            <div class="rep-header__photo-wrap">
+                <div class="rep-header__photo rep-header__photo--placeholder" aria-hidden="true"><?= $initial ?></div>
+                <?php if (!empty($official['photo_url'])): ?>
+                    <img class="rep-header__photo rep-header__photo--img"
+                         src="<?= e($official['photo_url']) ?>"
+                         alt=""
+                         referrerpolicy="no-referrer"
+                         onerror="this.remove()">
+                <?php endif; ?>
+            </div>
 
             <div class="rep-header__text">
                 <p class="article__kicker"><?= e($official['title']) ?>

@@ -11,6 +11,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Some external image hosts (legislator photo servers) apply hotlink
+     protection that rejects requests carrying a foreign Referer. Sending no
+     referrer at all gets past the subset that only blocks *foreign* referrers.
+     For the rest, the onerror handler in site.js swaps in an initials avatar. -->
+<meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#7A2820">
 <meta name="description" content="Independent civic information for Hardin County and the City of Kenton, Ohio.">
 
